@@ -36,7 +36,6 @@ var bird = {
     speed: 9.8,
     velY: 0.8,
     flap_frames: 0
-    //angle: 0
 };
 
 //the spooky walls
@@ -50,6 +49,8 @@ function wall(x, y){
     this.speed = 5;
     this.gone = false;
     this.passed = false;
+    this.img_width = 26;
+    this.img_height = 135;
 }
 
 ////////////////////////////controls////////////////////////////
@@ -72,6 +73,7 @@ document.addEventListener('keydown', function (e) {
 	menuTxtY = 0;
 	walls = [];
 	score = 0;
+	bird.y = height/2 - 50;
 	menu();
     }
 });
@@ -104,10 +106,21 @@ var draw = function() {
     ctx.fillStyle = "blue";
     for (var i = 0; i < walls.length; i++) {
 	if (!walls[i].gone) {
-	    ctx.fillRect(walls[i].x, walls[i].y, walls[i].width, walls[i].height);
-	    ctx.fillRect(walls[i].x, walls[i].y2, walls[i].width, walls[i].h2);
+        //old way
+		//ctx.fillRect(walls[i].x, walls[i].y, walls[i].width, walls[i].height);
+		//ctx.fillRect(walls[i].x, walls[i].y2, walls[i].width, walls[i].h2);
+        //new way
+        ctx.imageSmoothingEnabled = false;
+        ctx.mozImageSmoothingEnabled = false;
+        ctx.webkitImageSmoothingEnabled = false;
+        ctx.drawImage(sprite,
+            302, 0, walls[i].img_width, walls[i].img_height,
+            walls[i].x, walls[i].y + walls[i].height - height , walls[i].width, height); //little ugly but prevents squishing of image
+        ctx.drawImage(sprite,
+            330,0, walls[i].img_width, walls[i].img_height,
+            walls[i].x, walls[i].y2, walls[i].width, height);
 	}
-    }
+	}
 
     //score board
     ctx.fillStyle = "white";
@@ -116,30 +129,21 @@ var draw = function() {
     ctx.font = 80 + "pt Times New Roman";
     ctx.strokeText(score, width/2, 90);
     ctx.fillText(score, width/2, 90);
-
-    //temp half circle representation
-    // ctx.beginPath();
-    // ctx.arc(bird.x + bird.width/2, bird.y + bird.height/2, bird.width, (3*Math.PI)/2, Math.PI/2);
-    // ctx.strokeStyle = "black";
-    // ctx.stroke();
-    // ctx.closePath();
     
     ////old way
     //ctx.fillStyle = "red";
     //ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
     ////new way
-    ctx.save();
     var anim_name = bird.flap_frames > 0 ? 'flap' : 'normal';
     var slice = bird_anim[anim_name][0];
-    ctx.imageSmoothingEnabled = false;
-    ctx.mozImageSmoothingEnabled = false;
-    ctx.webkitImageSmoothingEnabled = false;
+    //ctx.imageSmoothingEnabled = false;
+    //ctx.mozImageSmoothingEnabled = false;
+    //ctx.webkitImageSmoothingEnabled = false;
     ctx.drawImage(sprite,
-		  slice.x,slice.y,bird.sprite_width,bird.sprite_height, //src
-		  bird.x,bird.y,bird.width,bird.height); //dst
-		  //slice.x,slice.y,64,64, //src
-		  //-player.w,-player.h,player.w*2,player.h*2); //dst
-    ctx.restore();
+		slice.x,slice.y,bird.sprite_width,bird.sprite_height, //src
+		bird.x,bird.y,bird.width,bird.height); //dst
+		//slice.x,slice.y,64,64, //src
+		//-player.w,-player.h,player.w*2,player.h*2); //dst
 };
 
 var update = function() {
@@ -156,16 +160,16 @@ var update = function() {
     for (var i = 0; i < walls.length; i++) {
 	//if wall moves of screen, then it's gone
 	if (walls[i].x < -walls[i].width) {
-	    walls[i].gone = true;
+		walls[i].gone = true;
 	}
 	//only walls still on screen get updated
 	if (!walls[i].gone) {
-	    walls[i].x -= walls[i].speed;
-	    
-	    if (colisionDetection(bird, walls[i])) {
+		walls[i].x -= walls[i].speed;
+
+		if (colisionDetection(bird, walls[i])) {
 		gameOver = true;
-		gameOverScreen();
-	    }
+		window.setTimeout(gameOverScreen, 1000);
+		}
 	}
     }
     
@@ -176,8 +180,11 @@ var update = function() {
     bird.y += bird.velY;
     
     if (bird.y > height - bird.height) {
-	bird.y = height - bird.height;
-	bird.velY = 0;
+	//bird.y = height - bird.height;
+	//bird.velY = 0;
+	//this bird can't land anymore
+	gameOver = true;
+	gameOverScreen();
     }
     if (bird.y < 0) {
 	bird.y = 0;
@@ -205,7 +212,7 @@ var colisionDetection = function(bird, rectangle) {
 	halfHeight = (bird.height/2) + (rectangle.h2/2);
 	
 	if (Math.abs(vx) < halfWidth && Math.abs(vy) < halfHeight) {
-	    return true;
+		return true;
 	}
 	//nothing collided
 	return false;
@@ -226,7 +233,7 @@ var menu = function() {
 	requestAnimationFrame(menu);
     }
     else{
-	main();
+		main();
     }
 };
 
