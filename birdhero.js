@@ -38,6 +38,22 @@ var bird = {
     flap_frames: 0
 };
 
+var bg = {
+    width: 144,
+    height: 256
+};
+
+var ground = {
+    img_x: 146,
+    img_y: 0,
+    x: 0,
+    y: 525,
+    width: width/4,
+    height: 150,
+    img_width: 154,
+    img_height: 55
+};
+
 //the spooky walls
 function wall(x, y){
     this.x = x;
@@ -60,21 +76,21 @@ canvas.addEventListener("click", function (e) {
     bird.velY = -bird.flap;
     bird.flap_frames = 5;
     if (!started) {
-	started = true;
+        started = true;
     }
 });
 
 document.addEventListener('keydown', function (e) {
     keys[e.keyCode] = true;
     if (13 in keys && gameOver) {
-	//reset EVERYTHING
-	started = false;
-	gameOver = false;
-	menuTxtY = 0;
-	walls = [];
-	score = 0;
-	bird.y = height/2 - 50;
-	menu();
+        //reset EVERYTHING
+        started = false;
+        gameOver = false;
+        menuTxtY = 0;
+        walls = [];
+        score = 0;
+        bird.y = height/2 - 50;
+        menu();
     }
 });
 
@@ -89,39 +105,40 @@ var main = function() {
     update();
     
     if (!gameOver && started) {
-	requestAnimationFrame(main);
+        requestAnimationFrame(main);
     }
 };
 
 window.onload = function() {
     if (!started) {
-	menu();
+        menu();
     }
 };
 
 /////////////////////////////////main mechanics////////////////////////////////
 var draw = function() {
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
     ctx.clearRect(0,0,width,height);
-    
-    ctx.fillStyle = "blue";
+    drawBackground();
+    //ctx.fillStyle = "blue";
     for (var i = 0; i < walls.length; i++) {
-	if (!walls[i].gone) {
-        //old way
-		//ctx.fillRect(walls[i].x, walls[i].y, walls[i].width, walls[i].height);
-		//ctx.fillRect(walls[i].x, walls[i].y2, walls[i].width, walls[i].h2);
-        //new way
-        ctx.imageSmoothingEnabled = false;
-        ctx.mozImageSmoothingEnabled = false;
-        ctx.webkitImageSmoothingEnabled = false;
+        if (!walls[i].gone) {
+            //old way
+            //ctx.fillRect(walls[i].x, walls[i].y, walls[i].width, walls[i].height);
+            //ctx.fillRect(walls[i].x, walls[i].y2, walls[i].width, walls[i].h2);
+            //new way
         ctx.drawImage(sprite,
             302, 0, walls[i].img_width, walls[i].img_height,
             walls[i].x, walls[i].y + walls[i].height - height , walls[i].width, height); //little ugly but prevents squishing of image
         ctx.drawImage(sprite,
             330,0, walls[i].img_width, walls[i].img_height,
             walls[i].x, walls[i].y2, walls[i].width, height);
-	}
+        }
 	}
 
+    drawForeground();
     //score board
     ctx.fillStyle = "white";
     ctx.strokeStyle = "black";
@@ -149,46 +166,46 @@ var draw = function() {
 var update = function() {
     //if no walls created yet or the last created wall has moved past the middle of the screen
     if (walls.length === 0 || walls[walls.length - 1].x < width/2) {
-	walls.push(new wall(width, 0));
+        walls.push(new wall(width, 0));
     }
     //add to score
     if (walls.length > 1 && bird.x > walls[walls.length - 2].x + walls[walls.length - 2].width && !walls[walls.length - 2].passed) {
-	score++;
-	walls[walls.length - 2].passed = true;
+        score++;
+        walls[walls.length - 2].passed = true;
     }
     
     for (var i = 0; i < walls.length; i++) {
-	//if wall moves of screen, then it's gone
-	if (walls[i].x < -walls[i].width) {
-		walls[i].gone = true;
-	}
-	//only walls still on screen get updated
-	if (!walls[i].gone) {
-		walls[i].x -= walls[i].speed;
+        //if wall moves of screen, then it's gone
+        if (walls[i].x < -walls[i].width) {
+            walls[i].gone = true;
+        }
+        //only walls still on screen get updated
+        if (!walls[i].gone) {
+            walls[i].x -= walls[i].speed;
 
-		if (colisionDetection(bird, walls[i])) {
-		gameOver = true;
-		window.setTimeout(gameOverScreen, 1000);
-		}
-	}
+            if (colisionDetection(bird, walls[i])) {
+                gameOver = true;
+                window.setTimeout(gameOverScreen, 1000);
+            }
+        }
     }
     
     if (bird.velY < bird.speed) {
-	bird.velY += gravity;
+        bird.velY += gravity;
     }
 
     bird.y += bird.velY;
     
-    if (bird.y > height - bird.height) {
-	//bird.y = height - bird.height;
-	//bird.velY = 0;
-	//this bird can't land anymore
-	gameOver = true;
-	gameOverScreen();
+    if (bird.y > height - bird.height - (height - ground.y) ) {
+        //bird.y = height - bird.height;
+        //bird.velY = 0;
+        //this bird can't land anymore
+        gameOver = true;
+        window.setTimeout(gameOverScreen, 1000);
     }
     if (bird.y < 0) {
-	bird.y = 0;
-	bird.velY = 0;
+        bird.y = 0;
+        bird.velY = 0;
     }
     
     bird.flap_frames = bird.flap_frames > 0 ? bird.flap_frames - 1 : 0;
@@ -202,35 +219,41 @@ var colisionDetection = function(bird, rectangle) {
     var halfHeight = (bird.height/2) + (rectangle.height/2);
     
     if (Math.abs(vx) < halfWidth && Math.abs(vy) < halfHeight) {
-	return true;
+        return true;
     }
     else {
-	//check wall 2
-	vx = (bird.x + (bird.width/2)) - (rectangle.x + (rectangle.width/2));
-	vy = (bird.y + (bird.height/2)) - (rectangle.y2 + (rectangle.h2/2));
-	halfWidth = (bird.width/2) + (rectangle.width/2);
-	halfHeight = (bird.height/2) + (rectangle.h2/2);
+        //check wall 2
+        vx = (bird.x + (bird.width/2)) - (rectangle.x + (rectangle.width/2));
+        vy = (bird.y + (bird.height/2)) - (rectangle.y2 + (rectangle.h2/2));
+        halfWidth = (bird.width/2) + (rectangle.width/2);
+        halfHeight = (bird.height/2) + (rectangle.h2/2);
 	
-	if (Math.abs(vx) < halfWidth && Math.abs(vy) < halfHeight) {
-		return true;
-	}
-	//nothing collided
-	return false;
+        if (Math.abs(vx) < halfWidth && Math.abs(vy) < halfHeight) {
+            return true;
+        }
+        //nothing collided
+        return false;
     }
 };
 
 var menu = function() {
     ctx.clearRect(0,0,width,height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    drawBackground();
+    drawForeground();
     ctx.fillStyle = "black";
     ctx.font = 100 + "pt Times New Roman";
     ctx.fillText("Bird Hero", width/2 - 250, menuTxtY);
     ctx.font = 50 + "pt Times New Roman";
     ctx.fillText("Click to start!", width/2 - 150, menuTxtY + 60);
+
     if (menuTxtY < height/2) {
-	menuTxtY += 5;
+        menuTxtY += 5;
     }
     if (!started) {
-	requestAnimationFrame(menu);
+        requestAnimationFrame(menu);
     }
     else{
 		main();
@@ -239,6 +262,8 @@ var menu = function() {
 
 var gameOverScreen = function() {
     ctx.clearRect(0,0,width,height);
+    drawBackground();
+    drawForeground();
     ctx.fillStyle = "black";
     ctx.font = 100 + "pt Times New Roman";
     ctx.fillText("Game Over", width/2 -250, height/2);
@@ -247,6 +272,22 @@ var gameOverScreen = function() {
     ctx.font = 40 + "pt Times New Roman";
     ctx.fillText("Press enter to reset", width/2 - 140, height/2 +130);
     if (gameOver) {
-	requestAnimationFrame(gameOverScreen);
+        requestAnimationFrame(gameOverScreen);
+    }
+};
+
+var drawBackground = function() {
+    for (var j = 0; j <= width ; j += width/4) {
+    ctx.drawImage(sprite,
+        0,0, bg.width, bg.height,
+        j,0, width/4, height);
+    }
+};
+
+var drawForeground = function() {
+    for (var j = 0; j <= width ; j += width/4) {
+    ctx.drawImage(sprite,
+        ground.img_x, ground.img_y, ground.img_width, ground.img_height,
+        j, ground.y, ground.width, ground.height);
     }
 };
