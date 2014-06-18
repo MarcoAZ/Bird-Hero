@@ -15,6 +15,7 @@ var gravity = 0.5;
 var holeSize = 175;
 var walls = [];
 var score = 0;
+var best = 0;
 var sprite = new Image();
 sprite.src = "sprites.png";
 var bird_anim = {};
@@ -54,6 +55,19 @@ var ground = {
     img_height: 55
 };
 
+var gameOverBG = {
+    src_x: 146,
+    src_y: 58,
+    src_w: 113,
+    src_h: 58
+};
+
+var medals = [//[220, 144], //no medal
+            [302, 137], //bronze
+            [266, 229], //silver
+            [242, 229] //gold
+            ];
+
 //the spooky walls
 function wall(x, y){
     this.x = x;
@@ -62,7 +76,7 @@ function wall(x, y){
     this.height = Math.random() * (height - holeSize*2) +100;
     this.y2 = this.height + holeSize;
     this.h2 = height - this.y2;
-    this.speed = 5;
+    this.speed = 7;
     this.gone = false;
     this.passed = false;
     this.img_width = 26;
@@ -122,6 +136,7 @@ var draw = function() {
     ctx.webkitImageSmoothingEnabled = false;
     ctx.clearRect(0,0,width,height);
     drawBackground();
+
     //ctx.fillStyle = "blue";
     for (var i = 0; i < walls.length; i++) {
         if (!walls[i].gone) {
@@ -153,9 +168,6 @@ var draw = function() {
     ////new way
     var anim_name = bird.flap_frames > 0 ? 'flap' : 'normal';
     var slice = bird_anim[anim_name][0];
-    //ctx.imageSmoothingEnabled = false;
-    //ctx.mozImageSmoothingEnabled = false;
-    //ctx.webkitImageSmoothingEnabled = false;
     ctx.drawImage(sprite,
 		slice.x,slice.y,bird.sprite_width,bird.sprite_height, //src
 		bird.x,bird.y,bird.width,bird.height); //dst
@@ -185,6 +197,11 @@ var update = function() {
 
             if (colisionDetection(bird, walls[i])) {
                 gameOver = true;
+
+                if (score > best) {
+                    best = score;
+                }
+
                 window.setTimeout(gameOverScreen, 1000);
             }
         }
@@ -201,6 +218,11 @@ var update = function() {
         //bird.velY = 0;
         //this bird can't land anymore
         gameOver = true;
+
+        if (score > best) {
+            best = score;
+        }
+
         window.setTimeout(gameOverScreen, 1000);
     }
     if (bird.y < 0) {
@@ -243,11 +265,16 @@ var menu = function() {
     ctx.webkitImageSmoothingEnabled = false;
     drawBackground();
     drawForeground();
-    ctx.fillStyle = "black";
-    ctx.font = 100 + "pt Times New Roman";
-    ctx.fillText("Bird Hero", width/2 - 250, menuTxtY);
-    ctx.font = 50 + "pt Times New Roman";
-    ctx.fillText("Click to start!", width/2 - 150, menuTxtY + 60);
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 6;
+    ctx.font = 80 + "pt Sigmar One";
+    ctx.strokeText("Bird Hero", width/2 - 280, menuTxtY);
+    ctx.fillText("Bird Hero", width/2 - 280, menuTxtY);
+    ctx.font = 45 + "pt Times New Roman";
+    ctx.lineWidth = 2;
+    ctx.strokeText("Click to start!", width/2 - 100, menuTxtY + 60);
+    ctx.fillText("Click to start!", width/2 - 100, menuTxtY + 60);
 
     if (menuTxtY < height/2) {
         menuTxtY += 5;
@@ -262,15 +289,42 @@ var menu = function() {
 
 var gameOverScreen = function() {
     ctx.clearRect(0,0,width,height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
     drawBackground();
     drawForeground();
-    ctx.fillStyle = "black";
-    ctx.font = 100 + "pt Times New Roman";
-    ctx.fillText("Game Over", width/2 -250, height/2);
+
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = "white";
+    ctx.lineWidth = 6;
+    ctx.font = 80 + "pt Sigmar One";
+    ctx.strokeText("Game Over", width/2 -270, height/2 - 100);
+    ctx.fillText("Game Over", width/2 -270, height/2 - 100);
+
+    ctx.drawImage(sprite,
+        gameOverBG.src_x, gameOverBG.src_y, gameOverBG.src_w, gameOverBG.src_h,
+        width/2 - 220, 210, 600, 300);
+
     ctx.font = 50 + "pt Times New Roman";
-    ctx.fillText("Final Score: " + score, width/2 - 125, height/2 + 65);
-    ctx.font = 40 + "pt Times New Roman";
-    ctx.fillText("Press enter to reset", width/2 - 140, height/2 +130);
+    ctx.strokeText(score, 900, height/2 + 45);
+    ctx.fillText(score, 900, height/2 + 45);
+
+    ctx.strokeText(best, 900, height/2 + 150);
+    ctx.fillText(best, 900, height/2 + 150);
+
+    for (var i = 0, j = 10; j < 32; i++, j += 10) {
+        if (score >= j) {
+            ctx.drawImage(sprite,
+                medals[i][0], medals[i][1], 22, 22,
+                width/2 - 150, 320, 120, 120);
+        }
+    }
+
+    ctx.font = 35 + "pt Times New Roman";
+    ctx.fillStyle = "#d2aa4f";
+    ctx.fillText("Press enter to reset", width/2 - 100, height/2 + 180);
+
     if (gameOver) {
         requestAnimationFrame(gameOverScreen);
     }
